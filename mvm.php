@@ -139,5 +139,6 @@ $csv->setCSV(Array("Категория~URL категории~Товар~Вариант~Описание~Цена~URL~Изоб
 		$k++;
 	}
 	
-		Func::printData($main_arr);
+		header("Location: http://parser.loc/index.php");
+		exit();
 ?>
