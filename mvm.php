@@ -39,13 +39,13 @@ fopen("data.csv", "a");
 $csv = new CSV(realpath("data.csv"));
 
 $csv->setCSV(Array("Категория~URL категории~Товар~Вариант~Описание~Цена~URL~Изображение~Артикул~Количество~Активность~Заголовок [SEO]~Ключевые слова [SEO]~Описание [SEO]~Старая цена~Рекомендуемый~Новый~Сортировка~Вес~Связанные артикулы~Смежные категории~Ссылка на товар~Валюта~Свойства"));
-
+sleep(4);
 $html = file_get_html($parse_link);
 
 $k = 0;
 $new_img = Array();
-$main_arr = Array();
-
+$main_arr = Array(); 	
+var_dump($html);
 foreach($html->find($xpath_product_link) as $element) {
 	$main_arr["link"][] = $pure_site_link_chk == 1 ? $pure_site_link.$element->href : $element->href;
 }
@@ -81,13 +81,13 @@ foreach($main_arr["link"] as $ln){
 	if($ht->find($xpath_img)){
 		foreach($ht->find($xpath_img) as $el) {
 		
-			if($el->src==false) continue;
+			if($el->href==false) continue;
 			
-			//$img_link_src = preg_replace("/node-list/", "node", $el->src);
+			$img_link_src = $el->href;
 			
-			preg_match("/[a-zA-z\-0-9() ]+.[a-zA-z\-0-9]+$/",$el->src,$new_img);
+			preg_match("/[a-zA-z\-0-9() ]+.[a-zA-z\-0-9]+$/",$img_link_src,$new_img);
 
-			if (copy($el->src,"tempimage/".$new_img[0])) {//$new_img[0]
+			if (copy($img_link_src,"tempimage/".$new_img[0])) {//$new_img[0]
 				$main_arr["img"][$k][] = $new_img[0];	//$img_link_src $new_img[0]		
 			}
 		}
@@ -96,10 +96,10 @@ foreach($main_arr["link"] as $ln){
 		
 			if($el->src==false) continue;
 			
-			//$img_link_src = preg_replace("/node-list/", "node", $el->src);
+			$img_link_src = $el->src;
 			
-			preg_match("/[a-zA-z\-0-9() ]+.[a-zA-z\-0-9]+$/",$el->src,$new_img);
-			if (copy($el->src,"tempimage/".$new_img[0])) {//$new_img[0]
+			preg_match("/[a-zA-z\-0-9() ]+.[a-zA-z\-0-9]+$/",$img_link_src,$new_img);
+			if (copy($img_link_src,"tempimage/".$new_img[0])) {//$new_img[0]
 				$main_arr["img"][$k][] = $new_img[0];		
 			}			
 		}
@@ -109,8 +109,8 @@ foreach($main_arr["link"] as $ln){
 	$url_category = $product_url_category; //URL категории
 	$goods = mb_convert_encoding($main_arr["title"][$k], 'windows-1251', 'UTF-8'); //Товар "Ноутбук Dell Inspiron N411Z"
 	$options = ""; //Вариант "без чехла"
-	$description = mb_convert_encoding(preg_replace( "/\r|\n/", "", $main_arr["xpath_product_description"][$k] ), 'windows-1251', 'UTF-8');//str_replace('{$goods}',$goods,mb_convert_encoding(mysql_result($product_description,0), 'windows-1251', 'UTF-8'))
-	$price = substr($main_arr["price"][$k], 0, -2); //Цена "19000"
+	$description = str_replace('{$goods}',$goods,mb_convert_encoding(preg_replace( "/\r|\n/", "", $main_arr["xpath_product_description"][$k] ), 'windows-1251', 'UTF-8'));
+	$price = $main_arr["price"][$k]; //Цена "19000"substr(, 0, -2)
 	$url = ""; //URL "noutbuk-dell-inspiron-n411z"
 	$img = ""; //Изображение "noutbuk-Dell-Inspiron-N411Z.png[:param:][alt=ноутбук dell][title=ноутбук dell]|noutbuk-Dell-Inspiron-N411Z-oneside.png[:param:][alt=Ноутбук"
 
@@ -172,7 +172,9 @@ foreach($main_arr["link"] as $ln){
 	
 	$k++;
 }	
-Func::printData($main_arr);
+echo "<pre>";
+var_dump($main_arr);
+echo "</pre>";
 $directory = "./tempimage";    // Папка с изображениями
 $allowed_types=array("jpg", "png", "gif");  //разрешеные типы изображений
 $file_parts = array();

@@ -82,51 +82,51 @@ if (!empty($_POST)) {
 	</p>
 	<p>
 	  <label for="input">Чистий лінк на сайт
-      <input type="text" id="input" name="pure_site_link" placeholder="<?php echo $pure_site_link;?>"></label>
+      <input type="text" id="input" name="pure_site_link" value="<?php echo $pure_site_link;?>"></label>
     </p>
     <p>
-      <label for="input">Ссилка на сайт що потрібно спарсити</label>
-      <input type="text" id="input" name="parse_link" placeholder="<?php echo $parse_link;?>">
+      <label for="input" style="color:red;">Ссилка на сайт що потрібно спарсити</label>
+      <input type="text" id="input" name="parse_link" value="<?php echo $parse_link;?>">
     </p>
 	
     <p>
       <label for="input">Xpath на Title</label>
-      <input type="text" id="input" name="xpath_title" placeholder="<?php echo $xpath_title;?>">
+      <input type="text" id="input" name="xpath_title" value="<?php echo $xpath_title;?>">
     </p>
 	
     <p>
       <label for="input">Xpath на цену</label>
-      <input type="text" id="input" name="xpath_price" placeholder="<?php echo $xpath_price;?>">
+      <input type="text" id="input" name="xpath_price" value="<?php echo $xpath_price;?>">
     </p>
 		
     <p>
       <label for="input">Xpath на багато картинок</label>
-      <input type="text" id="input" name="xpath_img" placeholder="<?php echo $xpath_img;?>">
+      <input type="text" id="input" name="xpath_img" value="<?php echo $xpath_img;?>">
     </p>
 	
 	<p>
       <label for="input">Xpath на одну картинку</label>
-      <input type="text" id="input" name="xpath_main_img" placeholder="<?php echo $xpath_main_img;?>">
+      <input type="text" id="input" name="xpath_main_img" value="<?php echo $xpath_main_img;?>">
     </p>
 		
     <p>
       <label for="input">Xpath на товар</label>
-      <input type="text" id="input" name="xpath_product_link" placeholder="<?php echo $xpath_product_link;?>">
+      <input type="text" id="input" name="xpath_product_link" value="<?php echo $xpath_product_link;?>">
     </p>
 	
 	<p>
       <label for="input">Xpath на описание товара</label>
-      <input type="text" id="input" name="xpath_product_description" placeholder="<?php echo $xpath_product_description;?>">
+      <input type="text" id="input" name="xpath_product_description" value="<?php echo $xpath_product_description;?>">
     </p>
 	
 	<p>
       <label for="input">Категорія на сайті</label>
-      <input type="text" id="input" name="product_category" placeholder="<?php echo $product_category;?>">
+      <input type="text" id="input" name="product_category" value="<?php echo $product_category;?>">
     </p>
 		
 	<p>
       <label for="input">URL Категорії на сайті</label>
-      <input type="text" id="input" name="product_url_category" placeholder="<?php echo $product_url_category;?>">
+      <input type="text" id="input" name="product_url_category" value="<?php echo $product_url_category;?>">
     </p>
 
     <p>
