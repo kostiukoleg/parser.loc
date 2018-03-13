@@ -28,16 +28,12 @@ $xpath_price = $con->query('SELECT xpath_price FROM html WHERE id='.$site_id, PD
 
 $site_name = $con->query("SELECT id,site_name FROM html", PDO::FETCH_ASSOC)->fetchAll();
 
-//Func::printData($site_name);
-
 if (!empty($_POST)) {
 	foreach ($_POST as $key => $value){
-		if(empty($value)||$key == "pure_site_link_chk"){
+		if(empty($value)){
 			continue;
 		}
-		if($key!="site_name"){
-			$con->prepare('UPDATE html SET '.$key.'='.$con->quote($value).' WHERE id='.$_POST['site_name'],[PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION])->execute();
-		}
+		$con->prepare('UPDATE html SET '.$key.'='.$con->quote($value).' WHERE id=18',[PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION])->execute();
 	}
 }
 ?>
@@ -51,15 +47,16 @@ if (!empty($_POST)) {
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
   </head>
-  <body>
-    	<p>
+  <body class="text-center">
+    <!--<p>
       <a href="/add.php">Добавити сайт для парсингу</a>
-    </p>
-<form class="bd-example" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
+    </p>-->
+<div class="container">
+<form id="myForm" class="bd-example" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
   <fieldset>
-    <legend>Парсим сайт</legend>
+    <legend class="h3 mb-3 font-weight-normal">Парсим сайт</legend>
 	
-    <p>
+    <!--<p>
       <label for="select">Назва сайту, що потрібно парсити</label>
       <select id="select" name="site_name">
 	  <?php
@@ -83,13 +80,13 @@ if (!empty($_POST)) {
 	<p>
 	  <label for="input">Чистий лінк на сайт
       <input type="text" id="input" name="pure_site_link" value="<?php echo $pure_site_link;?>"></label>
-    </p>
+    </p>-->
     <p>
       <label for="input" style="color:red;">Ссилка на сайт що потрібно спарсити</label>
-      <input type="text" id="input" name="parse_link" value="<?php echo $parse_link;?>">
+      <input type="text" id="input" name="parse_link" value="<?php echo $parse_link;?>" class="form-control">
     </p>
 	
-    <p>
+   <!-- <p>
       <label for="input">Xpath на Title</label>
       <input type="text" id="input" name="xpath_title" value="<?php echo $xpath_title;?>">
     </p>
@@ -117,16 +114,16 @@ if (!empty($_POST)) {
 	<p>
       <label for="input">Xpath на описание товара</label>
       <input type="text" id="input" name="xpath_product_description" value="<?php echo $xpath_product_description;?>">
-    </p>
+    </p>-->
 	
 	<p>
       <label for="input">Категорія на сайті</label>
-      <input type="text" id="input" name="product_category" value="<?php echo $product_category;?>">
+      <input type="text" id="input" name="product_category" value="<?php echo $product_category;?>" class="form-control">
     </p>
 		
 	<p>
       <label for="input">URL Категорії на сайті</label>
-      <input type="text" id="input" name="product_url_category" value="<?php echo $product_url_category;?>">
+      <input type="text" id="input" name="product_url_category" value="<?php echo $product_url_category;?>" class="form-control">
     </p>
 
     <p>
@@ -136,13 +133,12 @@ if (!empty($_POST)) {
 
 
     <p>
-      <input type="submit" value="Зберегти">
-    </p>
-	<p>
-      <a href="/mvm.php">Парсим</a>
+      <input type="submit" value="Зберегти" class="btn btn-success btn-lg">
+	  <a href="/mvm.php" class="btn btn-danger btn-lg">Парсим</a>
     </p>
   </fieldset>
 </form>
+</div>
     <!-- jQuery first, then Tether, then Bootstrap JS. -->
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>

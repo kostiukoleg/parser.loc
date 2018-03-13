@@ -1,13 +1,48 @@
 <?php
 class Func {
-	public static function cleanDir($dir=""){
-	if (file_exists($dir))
-	foreach (glob($dir.'/*') as $file)
-	unlink($file);
+	public static function innerHTML($node) {
+		if(is_object($node)){
+		return implode(array_map([$node->ownerDocument,"saveHTML"], 
+                             iterator_to_array($node->childNodes)));
+		}
 	}
+		
+	public static function parseSite($link){
+		$ch = curl_init($link);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+		/* 
+		 * XXX: This is not a "fix" for your problem, this is a work-around.  You 
+		 * should fix your local CAs 
+		 */
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+		/* Set a browser UA so that we aren't told to update */
+		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36');
+
+		$res = curl_exec($ch);
+
+		if ($res === false) {
+			die('error: ' . curl_error($ch));
+		}
+
+		curl_close($ch);
+
+		$html = new DOMDocument();
+		@$html->loadHTML($res);
+		return $html;
+	}
+	
+	public static function cleanDir($dir=""){
+		if (file_exists($dir))
+		foreach (glob($dir.'/*') as $file)
+		unlink($file);
+	}
+	
     public static function minifyHTML($html){
 		return preg_replace('/\s+/', ' ', $html);
 	}
+	
     public static function printArray($data) {
         $str ="Array(<br>";
         $i = 0;
