@@ -38,52 +38,96 @@ fopen("data.csv", "a");
 
 $csv = new CSV(realpath("data.csv"));
 
-$csv->setCSV(Array("РљР°С‚РµРіРѕСЂРёСЏ~URL РєР°С‚РµРіРѕСЂРёРё~РўРѕРІР°СЂ~Р’Р°СЂРёР°РЅС‚~РћРїРёСЃР°РЅРёРµ~Р¦РµРЅР°~URL~РР·РѕР±СЂР°Р¶РµРЅРёРµ~РђСЂС‚РёРєСѓР»~РљРѕР»РёС‡РµСЃС‚РІРѕ~РђРєС‚РёРІРЅРѕСЃС‚СЊ~Р—Р°РіРѕР»РѕРІРѕРє [SEO]~РљР»СЋС‡РµРІС‹Рµ СЃР»РѕРІР° [SEO]~РћРїРёСЃР°РЅРёРµ [SEO]~РЎС‚Р°СЂР°СЏ С†РµРЅР°~Р РµРєРѕРјРµРЅРґСѓРµРјС‹Р№~РќРѕРІС‹Р№~РЎРѕСЂС‚РёСЂРѕРІРєР°~Р’РµСЃ~РЎРІСЏР·Р°РЅРЅС‹Рµ Р°СЂС‚РёРєСѓР»С‹~РЎРјРµР¶РЅС‹Рµ РєР°С‚РµРіРѕСЂРёРё~РЎСЃС‹Р»РєР° РЅР° С‚РѕРІР°СЂ~Р’Р°Р»СЋС‚Р°~РЎРІРѕР№СЃС‚РІР°"));
+$csv->setCSV(Array("Категория~URL категории~Товар~Вариант~Описание~Цена~URL~Изображение~Артикул~Количество~Активность~Заголовок [SEO]~Ключевые слова [SEO]~Описание [SEO]~Старая цена~Рекомендуемый~Новый~Сортировка~Вес~Связанные артикулы~Смежные категории~Ссылка на товар~Валюта~Свойства"));
 
-
+$k = 0;
+$new_img = Array();
+$main_arr = Array();
 
 //MY CODE START
 
- $ch = curl_init($parse_link);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    /* 
-     * XXX: This is not a "fix" for your problem, this is a work-around.  You 
-     * should fix your local CAs 
-     */
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-    /* Set a browser UA so that we aren't told to update */
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.116 Safari/537.36');
-
-    $res = curl_exec($ch);
-
-    if ($res === false) {
-        die('error: ' . curl_error($ch));
-    }
-
-    curl_close($ch);
-
-    $html = new DOMDocument();
-    @$html->loadHTML($res);
+	$html = Func::parseSite($parse_link);
 	
 	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
 		$main_arr["link"][] = $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("a")->item(0)->getAttribute("href");	
 	}
 
 	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
-		$main_arr["title"][] = mb_convert_encoding($html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("div")->item(2)->getElementsByTagName("div")->item(0)->getElementsByTagName("h3")->item(0)->nodeValue, 'windows-1251', 'UTF-8');	//mb_convert_encoding($product_category, 'windows-1251', 'UTF-8')
+		$main_arr["title"][] = strip_tags(preg_replace( "/\r|\n/", "", mb_convert_encoding($html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("div")->item(2)->getElementsByTagName("div")->item(0)->getElementsByTagName("h3")->item(0)->nodeValue, 'windows-1251', 'UTF-8')));
 	}
 	
-	echo "<pre>";
-	var_dump($main_arr);
-	echo "</pre>";
-exit();
+	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
+		$int = $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("div")->item(2)->getElementsByTagName("div")->item(0)->getElementsByTagName("div")->item(0)->getElementsByTagName("span")->item(1)->textContent;
+		settype($int, "integer");
+		$main_arr["price"][] = $int;
+	}
+	
+	if (!file_exists("tempimage")) {
+		mkdir("tempimage", 0777, true);
+	}
+	
+	foreach($main_arr["link"] as $ln){
+		$ht = Func::parseSite( $ln );
+		$xpath = new DOMXpath($ht);
+		$str = preg_replace( "/\r|\n/", "", mb_convert_encoding($xpath->query('//*[@id="content"]/div/div[2]/div/div[3]')->item(0)->nodeValue, 'windows-1251', 'UTF-8'));
+		$s = preg_replace( "/: /", "=", $str);
+		$s = preg_replace( "/;/", "&", $s);
+		$main_arr["product_property"][] = $s;	
+		
+		for ($i = 0; $i < $xpath->query('//*[@id="content"]/div/div[1]/div/figure/div')->length; $i++) {
+			if($xpath->query('//*[@id="content"]/div/div[1]/div/figure')->item(0)->getElementsByTagName("div")->item($i)->getElementsByTagName("a")->item(0)->getAttribute("href") == "") continue;
+			
+			preg_match("/[a-zA-z\-0-9() ]+.[a-zA-z\-0-9]+$/",$xpath->query('//*[@id="content"]/div/div[1]/div/figure')->item(0)->getElementsByTagName("div")->item($i)->getElementsByTagName("a")->item(0)->getAttribute("href"),$new_img);
+			if (copy($xpath->query('//*[@id="content"]/div/div[1]/div/figure')->item(0)->getElementsByTagName("div")->item($i)->getElementsByTagName("a")->item(0)->getAttribute("href"),"tempimage/".$new_img[0])) {//$new_img[0]
+				$main_arr["img"][$k][] = $new_img[0];	
+			}
+		}
+		$category = mb_convert_encoding($product_category, 'windows-1251', 'UTF-8'); //Категория товара "Компьютерная техника/Компьютеры и ноутбуки/Ноутбуки"
+		$url_category = $product_url_category; //URL категории
+		$goods = $main_arr["title"][$k]; //Товар "Ноутбук Dell Inspiron N411Z"
+		$options = ""; //Вариант "без чехла"
+		$description = preg_replace( "/\r|\n/", "", $main_arr["xpath_product_description"][$k]);//str_replace('{$goods}',$goods,mb_convert_encoding(mysql_result($product_description,0), 'windows-1251', 'UTF-8'))
+		$price = $main_arr["price"][$k]; //Цена "19000"
+		$url = ""; //URL "noutbuk-dell-inspiron-n411z"
+		$img = ""; //Изображение "noutbuk-Dell-Inspiron-N411Z.png[:param:][alt=ноутбук dell][title=ноутбук dell]|noutbuk-Dell-Inspiron-N411Z-oneside.png[:param:][alt=Ноутбук"
+
+		if(is_array($main_arr["img"][$k])){
+			foreach($main_arr["img"][$k] as $im){
+			$img .= $im."[:param:][alt=$goods][title=$goods]|";
+			}
+			$img = substr($img, 0, -1);
+		} else {
+			$img .= $main_arr["img"][$k]."[:param:][alt=$goods][title=$goods]";
+		}
+		
+		$articul = ""; //Артикул "1000A"
+		$count = "-1"; //Количество "-1 нет на складе"
+		$activity = "1"; //Активность 1 включон 0 выключен
+		$title_seo = ""; //Заголовок [SEO]
+		$kay_words = ""; //Ключевые слова [SEO]
+		$description_seo = ""; //Описание [SEO]
+		$old_price = ""; //Старая цена
+		$reccomend = "0"; //Рекомендуемый
+		$new = "0"; //Новый
+		$sort = ""; //Сортировка
+		$weight = "0,27"; //Вес "2,27"
+		$bind_articul = ""; //Связанные артикулы
+		$neibor_category = ""; //Смежные категории
+		$link_goods = ""; //Ссылка на товар
+		$currency = "UAH"; //Валюта
+		$propertis = $main_arr["product_property"][$k];
+		
+		$csv->setCSV(array("$category~$url_category~$goods~$options~$description~$price~$url~$img~$articul~$count~$activity~$title_seo~$kay_words~$description_seo~$old_price~$reccomend~$new~$sort~$weight~$bind_articul~$neibor_category~$link_goods~$currency~$propertis"));
+	
+		$k++;
+	}
+	
+		Func::printData($main_arr);
+		exit();
+
 //MY CODE END
 $html = file_get_html($res);
-$k = 0;
-$new_img = Array();
-$main_arr = Array();
+
 
 
 //MY CODE START
@@ -109,9 +153,7 @@ if($xpath_price == "null"){
 	}
 }
 
-if (!file_exists("tempimage")) {
-		mkdir("tempimage", 0777, true);
-}
+
 
 foreach($main_arr["link"] as $ln){
 	
@@ -151,14 +193,14 @@ foreach($main_arr["link"] as $ln){
 		}
 	}
 	
-	$category = mb_convert_encoding($product_category, 'windows-1251', 'UTF-8'); //РљР°С‚РµРіРѕСЂРёСЏ С‚РѕРІР°СЂР° "РљРѕРјРїСЊСЋС‚РµСЂРЅР°СЏ С‚РµС…РЅРёРєР°/РљРѕРјРїСЊСЋС‚РµСЂС‹ Рё РЅРѕСѓС‚Р±СѓРєРё/РќРѕСѓС‚Р±СѓРєРё"
-	$url_category = $product_url_category; //URL РєР°С‚РµРіРѕСЂРёРё
-	$goods = mb_convert_encoding($main_arr["title"][$k], 'windows-1251', 'UTF-8'); //РўРѕРІР°СЂ "РќРѕСѓС‚Р±СѓРє Dell Inspiron N411Z"
-	$options = ""; //Р’Р°СЂРёР°РЅС‚ "Р±РµР· С‡РµС…Р»Р°"
+	$category = mb_convert_encoding($product_category, 'windows-1251', 'UTF-8'); //Категория товара "Компьютерная техника/Компьютеры и ноутбуки/Ноутбуки"
+	$url_category = $product_url_category; //URL категории
+	$goods = mb_convert_encoding($main_arr["title"][$k], 'windows-1251', 'UTF-8'); //Товар "Ноутбук Dell Inspiron N411Z"
+	$options = ""; //Вариант "без чехла"
 	$description = mb_convert_encoding(preg_replace( "/\r|\n/", "", $main_arr["xpath_product_description"][$k] ), 'windows-1251', 'UTF-8');//str_replace('{$goods}',$goods,mb_convert_encoding(mysql_result($product_description,0), 'windows-1251', 'UTF-8'))
-	$price = substr($main_arr["price"][$k], 0, -2); //Р¦РµРЅР° "19000"
+	$price = substr($main_arr["price"][$k], 0, -2); //Цена "19000"
 	$url = ""; //URL "noutbuk-dell-inspiron-n411z"
-	$img = ""; //РР·РѕР±СЂР°Р¶РµРЅРёРµ "noutbuk-Dell-Inspiron-N411Z.png[:param:][alt=РЅРѕСѓС‚Р±СѓРє dell][title=РЅРѕСѓС‚Р±СѓРє dell]|noutbuk-Dell-Inspiron-N411Z-oneside.png[:param:][alt=РќРѕСѓС‚Р±СѓРє"
+	$img = ""; //Изображение "noutbuk-Dell-Inspiron-N411Z.png[:param:][alt=ноутбук dell][title=ноутбук dell]|noutbuk-Dell-Inspiron-N411Z-oneside.png[:param:][alt=Ноутбук"
 
 	if(is_array($main_arr["img"][$k])){
 		foreach($main_arr["img"][$k] as $im){
@@ -169,46 +211,46 @@ foreach($main_arr["link"] as $ln){
 		$img .= $main_arr["img"][$k]."[:param:][alt=$goods][title=$goods]";
 	}
 	
-	$articul = ""; //РђСЂС‚РёРєСѓР» "1000A"
-	$count = "-1"; //РљРѕР»РёС‡РµСЃС‚РІРѕ "-1 РЅРµС‚ РЅР° СЃРєР»Р°РґРµ"
-	$activity = "1"; //РђРєС‚РёРІРЅРѕСЃС‚СЊ 1 РІРєР»СЋС‡РѕРЅ 0 РІС‹РєР»СЋС‡РµРЅ
-	$title_seo = ""; //Р—Р°РіРѕР»РѕРІРѕРє [SEO]
-	$kay_words = ""; //РљР»СЋС‡РµРІС‹Рµ СЃР»РѕРІР° [SEO]
-	$description_seo = ""; //РћРїРёСЃР°РЅРёРµ [SEO]
-	$old_price = ""; //РЎС‚Р°СЂР°СЏ С†РµРЅР°
-	$reccomend = "0"; //Р РµРєРѕРјРµРЅРґСѓРµРјС‹Р№
-	$new = "0"; //РќРѕРІС‹Р№
-	$sort = ""; //РЎРѕСЂС‚РёСЂРѕРІРєР°
-	$weight = "0,27"; //Р’РµСЃ "2,27"
-	$bind_articul = ""; //РЎРІСЏР·Р°РЅРЅС‹Рµ Р°СЂС‚РёРєСѓР»С‹
-	$neibor_category = ""; //РЎРјРµР¶РЅС‹Рµ РєР°С‚РµРіРѕСЂРёРё
-	$link_goods = ""; //РЎСЃС‹Р»РєР° РЅР° С‚РѕРІР°СЂ
-	$currency = "UAH"; //Р’Р°Р»СЋС‚Р°
+	$articul = ""; //Артикул "1000A"
+	$count = "-1"; //Количество "-1 нет на складе"
+	$activity = "1"; //Активность 1 включон 0 выключен
+	$title_seo = ""; //Заголовок [SEO]
+	$kay_words = ""; //Ключевые слова [SEO]
+	$description_seo = ""; //Описание [SEO]
+	$old_price = ""; //Старая цена
+	$reccomend = "0"; //Рекомендуемый
+	$new = "0"; //Новый
+	$sort = ""; //Сортировка
+	$weight = "0,27"; //Вес "2,27"
+	$bind_articul = ""; //Связанные артикулы
+	$neibor_category = ""; //Смежные категории
+	$link_goods = ""; //Ссылка на товар
+	$currency = "UAH"; //Валюта
 
 	$pr = array(
-		 "PB\/SB" => "РїРѕР»РёСЂРѕРІР°РЅРЅР°СЏ Р»Р°С‚СѓРЅСЊ / РјР°С‚РѕРІР°СЏ Р»Р°С‚СѓРЅСЊ",
-		 "MACC" => "РјР°С‚РѕРІР°СЏ Р±СЂРѕРЅР·Р°",
-		 "AB" => "СЃС‚Р°СЂР°СЏ Р±СЂРѕРЅР·Р°",
-		 "SN\/CP" => "РјР°С‚РѕРІС‹Р№ РЅРёРєРµР»СЊ / РїРѕР»РёСЂРѕРІР°РЅРЅС‹Р№ С…СЂРѕРј",
-		 "MBN" => "РјР°С‚РѕРІР°СЏ С‚РµРјРЅР°СЏ СЃС‚Р°Р»СЊ",
-		 "White" => "Р±РµР»С‹Р№",
-		 "MOC" => "РјР°С‚РѕРІС‹Р№ СЃС‚Р°СЂС‹Р№ С…СЂРѕРј",
-		 "MA" => "РјР°С‚РѕРІС‹Р№ Р°РЅС‚СЂР°С†РёС‚",
-		 "MC" => "РјР°С‚РѕРІС‹Р№ С…СЂРѕРј",
-		 "BN\/SBN" => "С‡РµСЂРЅС‹Р№ РЅРёРєРµР»СЊ / РјР°С‚РѕРІС‹Р№ С‡РµСЂРЅС‹Р№ РЅРёРєРµР»СЊ",
-		 "BLACK" => "С‡РµСЂРЅС‹Р№",
-		 "CP" => "РїРѕР»РёСЂРѕРІР°РЅРЅС‹Р№ С…СЂРѕРј",
-		 "PCF" => "РїРѕР»РёСЂРѕРІР°РЅРЅР°СЏ Р±СЂРѕРЅР·Р°",
-		 "MACC\/PCF" => "РјР°С‚РѕРІР° Р±СЂРѕРЅР·Р°/РїРѕР»С–СЂРѕРІР°РЅР° Р±СЂРѕРЅР·Р°",
-		 "MCF" => "РјР°С‚РѕРІР°СЏ С‚РµРјРЅР°СЏ Р±СЂРѕРЅР·Р°",
-		 "SN" => "РјР°С‚РѕРІС‹Р№ РЅРёРєРµР»СЊ",
-		 "SS" => "РЅРµСЂР¶Р°РІРµСЋС‰Р°СЏ СЃС‚Р°Р»СЊ",
-		 "BN" => "С‡РµСЂРЅС‹Р№ РЅРёРєРµР»СЊ",
+		 "PB\/SB" => "полированная латунь / матовая латунь",
+		 "MACC" => "матовая бронза",
+		 "AB" => "старая бронза",
+		 "SN\/CP" => "матовый никель / полированный хром",
+		 "MBN" => "матовая темная сталь",
+		 "White" => "белый",
+		 "MOC" => "матовый старый хром",
+		 "MA" => "матовый антрацит",
+		 "MC" => "матовый хром",
+		 "BN\/SBN" => "черный никель / матовый черный никель",
+		 "BLACK" => "черный",
+		 "CP" => "полированный хром",
+		 "PCF" => "полированная бронза",
+		 "MACC\/PCF" => "матова бронза/полірована бронза",
+		 "MCF" => "матовая темная бронза",
+		 "SN" => "матовый никель",
+		 "SS" => "нержавеющая сталь",
+		 "BN" => "черный никель",
 	);
 	
 	foreach($pr as $p => $v){
 		if(preg_match("/\s".$p."$/",$main_arr["title"][$k])){
-			$propertis = "Р¦РІРµС‚ РїРѕРєСЂС‹С‚РёСЏ=$v"; //РЎРІРѕР№СЃС‚РІР°
+			$propertis = "Цвет покрытия=$v"; //Свойства
 		}else{
 			$propertis = "";
 		}
@@ -217,21 +259,23 @@ foreach($main_arr["link"] as $ln){
 	$csv->setCSV(array("$category~$url_category~$goods~$options~$description~$price~$url~$img~$articul~$count~$activity~$title_seo~$kay_words~$description_seo~$old_price~$reccomend~$new~$sort~$weight~$bind_articul~$neibor_category~$link_goods~$currency~$propertis"));
 	
 	$k++;
-}	
+}
+
+	
 Func::printData($main_arr);
-$directory = "./tempimage";    // РџР°РїРєР° СЃ РёР·РѕР±СЂР°Р¶РµРЅРёСЏРјРё
-$allowed_types=array("jpg", "png", "gif");  //СЂР°Р·СЂРµС€РµРЅС‹Рµ С‚РёРїС‹ РёР·РѕР±СЂР°Р¶РµРЅРёР№
+$directory = "./tempimage";    // Папка с изображениями
+$allowed_types=array("jpg", "png", "gif");  //разрешеные типы изображений
 $file_parts = array();
 $ext="";
 $title="";
 $i=0;
-//РїСЂРѕР±СѓРµРј РѕС‚РєСЂС‹С‚СЊ РїР°РїРєСѓ
-$dir_handle = @opendir($directory) or die("РћС€РёР±РєР° РїСЂРё РѕС‚РєСЂС‹С‚РёРё РїР°РїРєРё !!!");
-while ($file = readdir($dir_handle))    //РїРѕРёСЃРє РїРѕ С„Р°Р№Р»Р°Рј
+//пробуем открыть папку
+$dir_handle = @opendir($directory) or die("Ошибка при открытии папки !!!");
+while ($file = readdir($dir_handle))    //поиск по файлам
   {
-  if($file=="." || $file == "..") continue;  //РїСЂРѕРїСѓСЃС‚РёС‚СЊ СЃСЃС‹Р»РєРё РЅР° РґСЂСѓРіРёРµ РїР°РїРєРё
-  $file_parts = explode(".",$file);          //СЂР°Р·РґРµР»РёС‚СЊ РёРјСЏ С„Р°Р№Р»Р° Рё РїРѕРјРµСЃС‚РёС‚СЊ РµРіРѕ РІ РјР°СЃСЃРёРІ
-  $ext = strtolower(array_pop($file_parts));   //РїРѕСЃР»РµРґРЅРёР№ СЌР»РµРјРµРЅРµС‚ - СЌС‚Рѕ СЂР°СЃС€РёСЂРµРЅРёРµ
+  if($file=="." || $file == "..") continue;  //пропустить ссылки на другие папки
+  $file_parts = explode(".",$file);          //разделить имя файла и поместить его в массив
+  $ext = strtolower(array_pop($file_parts));   //последний элеменет - это расширение
   if(in_array($ext,$allowed_types))
   {
  $i++;
@@ -239,20 +283,20 @@ while ($file = readdir($dir_handle))    //РїРѕРёСЃРє РїРѕ С„Р°Р№Р»Р°Рј
   $images[] = $file;
   }
 
-closedir($dir_handle);  //Р·Р°РєСЂС‹С‚СЊ РїР°РїРєСѓ
+closedir($dir_handle);  //закрыть папку
 
 $error = "";
 if(isset($_POST['createpdf']))
 {
 
-$file_folder = "tempimage/"; // РїР°РїРєР° СЃ С„Р°Р№Р»Р°РјРё
+$file_folder = "tempimage/"; // папка с файлами
 if(extension_loaded('zip'))
 {
 if(isset($images) and count($images) > 0)
 {
-// РїСЂРѕРІРµСЂСЏРµРј РІС‹Р±СЂР°РЅРЅС‹Рµ С„Р°Р№Р»С‹
-$zip = new ZipArchive(); // РїРѕРґРіСЂСѓР¶Р°РµРј Р±РёР±Р»РёРѕС‚РµРєСѓ zip
-$zip_name = time().".zip"; // РёРјСЏ С„Р°Р№Р»Р°
+// проверяем выбранные файлы
+$zip = new ZipArchive(); // подгружаем библиотеку zip
+$zip_name = time().".zip"; // имя файла
 if($zip->open($zip_name, ZIPARCHIVE::CREATE)!==TRUE)
 {
 
@@ -260,16 +304,16 @@ $error .= "* Sorry ZIP creation failed at this time";
 }
 foreach($images as $file)
 {
-$zip->addFile($file_folder.$file); // РґРѕР±Р°РІР»СЏРµРј С„Р°Р№Р»С‹ РІ zip Р°СЂС…РёРІ
+$zip->addFile($file_folder.$file); // добавляем файлы в zip архив
 }
 $zip->close();
 if(file_exists($zip_name))
 {
-// РѕС‚РґР°С‘Рј С„Р°Р№Р» РЅР° СЃРєР°С‡РёРІР°РЅРёРµ
+// отдаём файл на скачивание
 header('Content-type: application/zip');
 header('Content-Disposition: attachment; filename="'.$zip_name.'"');
 readfile($zip_name);
-// СѓРґР°Р»СЏРµРј zip С„Р°Р№Р» РµСЃР»Рё РѕРЅ СЃСѓС‰РµСЃС‚РІСѓРµС‚
+// удаляем zip файл если он существует
 unlink($zip_name);
 }
 
