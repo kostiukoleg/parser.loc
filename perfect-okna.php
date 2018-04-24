@@ -48,24 +48,28 @@ fopen("data.csv", "a");
 $csv = new CSV(realpath("data.csv"));
 
 $csv->setCSV(Array("Категория~URL категории~Товар~Вариант~Описание~Цена~URL~Изображение~Артикул~Количество~Активность~Заголовок [SEO]~Ключевые слова [SEO]~Описание [SEO]~Старая цена~Рекомендуемый~Новый~Сортировка~Вес~Связанные артикулы~Смежные категории~Ссылка на товар~Валюта~Свойства"));
-
+$parse_link = "https://perfect-okna.com.ua/ru/shop/category/mizhkimnatni-dveri/verto/";
 	$html = Func::parseSite($parse_link);
-	//$xp = new DOMXpath($html);
+	$xp = new DOMXpath($html);
 
-	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
-		$main_arr["link"][] = $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("a")->item(0)->getAttribute("href");	
+	//$xp_link = $xp->query('//*[@id="items-catalog-main"]/div[2]/div[1]/div[2]/span[2]/span/span/span[1]')->item(0)->textContent;
+	for ($i=0; $i < $xp->query('//*[@id="items-catalog-main"]/div')->length; $i++) { 
+		$main_arr["link"][] = $xp->query('//*[@id="items-catalog-main"]/div/a')->item($i)->getAttribute("href");
 	}
 
-	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
-		$main_arr["title"][] = strip_tags(preg_replace( "/\r|\n/", "", mb_convert_encoding($html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("div")->item(2)->getElementsByTagName("div")->item(0)->getElementsByTagName("h3")->item(0)->nodeValue, 'windows-1251', 'UTF-8')));
+	for ($i=0; $i < $xp->query('//*[@id="items-catalog-main"]/div')->length; $i++) {
+		$main_arr["title"][] = strip_tags(preg_replace( "/\r|\n/", "", mb_convert_encoding($xp->query('//*[@id="items-catalog-main"]/div/a')->item($i)->textContent, 'windows-1251', 'UTF-8')));
 	}
 	
-	for ($i = 0; $i < $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->length; $i++) {
-		$int = $html->getElementById("content")->getElementsByTagName("ul")->item(0)->getElementsByTagName("li")->item($i)->getElementsByTagName("div")->item(2)->getElementsByTagName("div")->item(0)->getElementsByTagName("div")->item(0)->getElementsByTagName("span")->item(1)->textContent;
-		settype($int, "integer");
-		$main_arr["price"][] = $int;
+	for ($i=1; $i <= $xp->query('//*[@id="items-catalog-main"]/div')->length; $i++) {
+		$str = '//*[@id="items-catalog-main"]/div[~a~]/div[1]/div[2]/span[2]/span/span/span[1]';
+		$new_str = preg_replace("/~a~/",$i,$str);
+		//echo $new_str."<br>";
+		$int = $xp->query($new_str)->item(0)->textContent;
+		//settype($int, "integer");
+		$main_arr["price"][] = preg_replace('/\s+/', '', $int);
 	}
-	
+	var_dump($main_arr["price"]);exit();
 	foreach($main_arr["link"] as $ln){
 		$ht = Func::parseSite( $ln );
 		$xpath = new DOMXpath($ht);
